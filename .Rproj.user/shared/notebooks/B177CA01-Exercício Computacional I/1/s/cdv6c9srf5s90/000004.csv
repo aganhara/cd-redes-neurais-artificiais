@@ -1,0 +1,7 @@
+"2","Warning in gzfile(file, ""wb"") :"
+"2","
+ "
+"2"," cannot open compressed file 'C:/Users/aganh/Documents/Ciência de dados e decisão/Exercícios computacionais/cd-redes-neurais-artificiais/Redes Neurais Artificiais/.Rproj.user/shared/notebooks/B177CA01-Exercício Computacional I/1/54F35F11E1FFA2EB/cdv6c9srf5s90_t/12d7c95d13f149ffa49b09dfed73ada0.snapshot', probable reason 'No such file or directory'
+"
+"2","Error in gzfile(file, ""wb"") : cannot open the connection
+"

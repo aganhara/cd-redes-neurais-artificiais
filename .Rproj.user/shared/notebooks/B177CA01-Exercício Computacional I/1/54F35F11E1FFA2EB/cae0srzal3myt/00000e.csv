@@ -1,0 +1,8 @@
+"0","# Plot dos erros"
+"0","chart <- ggplot(df_RNA_pred, aes(x = dados_teste,y = RNA_pred)) + "
+"0","            geom_point() + "
+"0","            stat_smooth() + "
+"0","            xlab('Dados de Teste (preço mediano das casas)') + "
+"0","            ylab('Predições')  +"
+"0","            ggtitle(""Gráfico de Desempenho - Modelo RNA"")"
+"0","chart"

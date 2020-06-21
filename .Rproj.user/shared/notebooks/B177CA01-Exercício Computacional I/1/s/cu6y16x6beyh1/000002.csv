@@ -1,0 +1,3 @@
+"0","# Aplicando a normalização min/max (função scale - pacote RBase)"
+"0","dados_normalizados <- as.data.frame(scale(dataset, center = minimo, scale = maximo - minimo))"
+"0","head(dados_normalizados)"
