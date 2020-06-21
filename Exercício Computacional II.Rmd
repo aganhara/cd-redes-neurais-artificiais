@@ -1,0 +1,126 @@
+---
+title: "Exercício Computacional II"
+author: "Anderson Ganhara"
+date: "6/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(MASS)
+library(caTools)
+library(neuralnet)
+library(tidyverse)
+dataset <- Boston
+
+# Procedimento de Normalização min/max - vamos capturar os valores máximo e mínimo dos dados
+maximo <- apply(dataset, 2, max) 
+minimo <- apply(dataset, 2, min)
+
+# Aplicando a normalização min/max (função scale - pacote RBase)
+dfNorm <- as.data.frame(scale(dataset, center = minimo, scale = maximo - minimo))
+head(dfNorm)
+```
+
+
+Realizando a divisão dos conjuntos de teste e treino
+```{r}
+set.seed(12)
+# =====================================================================================
+# Fazendo a divisão dos dados em conjuntos de treinamento e teste
+
+# Aplicando a função sample.split (pacote caTools) para divisão dos dados
+# O sample.split é mais uma maneira de gerarmos índices para, posteriormente, 
+# acessarmos o dataset e realizamos a divisão treino/teste
+divisao_dados = sample.split(dfNorm, SplitRatio = 0.70)
+# Acessando o conjunto de dados de treinamento com a função subset
+df_train <-  subset(dfNorm, divisao_dados == TRUE)
+df_test <- subset(dfNorm, divisao_dados == FALSE)
+```
+
+Criando a equação
+```{r}
+# Capturando os nomes das colunas
+nomes_colunas <- colnames(dfNorm)
+# Vamos usar os nomes das variáveis explanatórias na montagem do objeto do tipo fórmula do R
+equation_model <- as.formula(paste ( "medv ~ ", paste(nomes_colunas[!nomes_colunas %in% "medv"], collapse = " + ")))
+```
+
+Treinando os modelos preditivos
+```{r}
+# Treinamento com NeuralNet - repare estamos 
+modelo_RNA = neuralnet(equation_model, data = df_train, hidden = c(5,3), linear.output = TRUE)
+# Modelo baseado em regressão linear
+modelo_ML <- lm(equation_model, data = dfNorm)
+```
+
+Testando os modelos
+```{r}
+RNA_pred_norm <-  neuralnet::compute(modelo_RNA, df_test[1:13])
+ML_pred_norm <- predict(modelo_ML, df_test[1:13]) %>% as.data.frame()
+
+```
+
+```{r}
+# É importante notar que as predições foram obtidas a partir dos dados de teste normalizados. 
+# Precisamos fazer a conversão de normalização necessária para acessar os valores previstos de interesse
+# Como fazer a conversão de normalização no caso de min/max
+# 1) Acessamos a rede neural treinada e seu resultado ($net.result)
+# 2) Acessamos os valores da variável de saída (medv) 
+# 3) Multiplicamos os resultados normalizados pela diferença entre o máximo e o mínimo - e acrescentamos o mínimo
+max_medv <-  max(dataset$medv) 
+min_medv <-  min(dataset$medv)
+#Dados obtidos da rede neural
+RNA_pred <-  RNA_pred_norm$net.result*(max_medv - min_medv) + min_medv
+ML_pred <-   ML_pred_norm*(max_medv - min_medv) + min_medv
+# Vamos fazer o mesmo procedimento para os dados de teste normalizados
+df_test_norm <- (df_test$medv)*(max_medv - min_medv) +  min_medv
+
+```
+
+Calculando o MSE das predições
+```{r}
+# ----------------------------------------------------------------------------
+# Estimativa do Erro Quadrático Médio (MSE - Mean Squared Error) do Modelo RNA
+MSE_RNA <- sum(     ((df_test_norm - RNA_pred)^2) )/nrow(RNA_pred)
+MSE_ML <- sum(     ((df_test_norm - ML_pred)^2) )/nrow(ML_pred)
+MSE_RNA
+MSE_ML
+```
+
+Plotando os erros da rede neural
+```{r}
+# Obtendo os erros de previsao
+df_RNA_pred <- data.frame(df_test_norm, RNA_pred_norm)
+# head(df_RNA_pred)
+
+# Plot dos erros
+ggplot(df_RNA_pred, aes(x = df_test_norm, y = RNA_pred_norm$net.result)) + 
+            geom_point() + 
+            stat_smooth() + 
+            xlab('Dados de Teste') + 
+            ylab('Predições')  +
+            ggtitle("Gráfico de Desempenho - Modelo RNA")
+```
+
+
+Plotando os erros do modelo baseado em regressão linear
+```{r}
+# Obtendo os erros de previsao
+df_ML_pred <- data.frame(df_test_norm, ML_pred)
+names(df_ML_pred) <- c("test", "predict")
+# head(df_RNA_pred)
+
+# Plot dos erros
+ggplot(df_ML_pred, aes(x = test, y = predict)) + 
+            geom_point() + 
+            stat_smooth() + 
+            xlab('Dados de Teste') + 
+            ylab('Predições')  +
+            ggtitle("Gráfico de Desempenho - Modelo ML")
+```
+
+De acordo com o resultado dos MSEs a rede neural teve melhor desempenho em relação a ML baseada em regressão linear.
